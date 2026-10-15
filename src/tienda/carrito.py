@@ -1,47 +1,34 @@
-"""MÓDULO 1 - CARRITO DE COMPRAS (Equipo 1)
-
-Estructura del carrito (un diccionario):
-    {"pan": {"precio": 10.0, "cantidad": 2}, "leche": {"precio": 25.5, "cantidad": 1}}
-
-Implementen TODAS las funciones. No cambien nombres ni parámetros.
-Pruebas: tests/test_carrito.py
-"""
+def crear_carrito():
+    return {}
 
 
-def crear_carrito() -> dict:
-    """Devuelve un carrito vacío ({})."""
-    raise NotImplementedError("Equipo 1: implementen crear_carrito")
+def agregar_producto(carrito, nombre, precio, cantidad=1):
+    if precio <= 0:
+        raise ValueError("precio inválido")
+    if cantidad <= 0:
+        raise ValueError("cantidad inválida")
+    if nombre in carrito:
+        carrito[nombre]["cantidad"] += cantidad
+    else:
+        carrito[nombre] = {"precio": precio, "cantidad": cantidad}
+    return carrito
 
 
-def agregar_producto(carrito: dict, nombre: str, precio: float, cantidad: int = 1) -> dict:
-    """Agrega un producto al carrito y devuelve el MISMO carrito.
-
-    - Si el producto ya existe, suma la cantidad y conserva el precio original.
-    - precio <= 0  -> ValueError
-    - cantidad <= 0 -> ValueError
-    """
-    raise NotImplementedError("Equipo 1: implementen agregar_producto")
-
-
-def quitar_producto(carrito: dict, nombre: str, cantidad: int | None = None) -> dict:
-    """Quita un producto y devuelve el MISMO carrito.
-
-    - cantidad=None -> elimina el producto completo.
-    - Si cantidad >= a la que hay en el carrito -> elimina el producto completo.
-    - Si cantidad es menor -> solo resta esa cantidad.
-    - Producto que no está en el carrito -> KeyError
-    - cantidad <= 0 (cuando no es None) -> ValueError
-    """
-    raise NotImplementedError("Equipo 1: implementen quitar_producto")
+def quitar_producto(carrito, nombre, cantidad=None):
+    if nombre not in carrito:
+        raise KeyError(nombre)
+    if cantidad is not None and cantidad <= 0:
+        raise ValueError("cantidad inválida")
+    if cantidad is None or cantidad >= carrito[nombre]["cantidad"]:
+        del carrito[nombre]
+    else:
+        carrito[nombre]["cantidad"] -= cantidad
+    return carrito
 
 
-def calcular_total(carrito: dict) -> float:
-    """Suma precio * cantidad de todos los productos, redondeado a 2 decimales.
-    Carrito vacío -> 0 (0.0).
-    """
-    raise NotImplementedError("Equipo 1: implementen calcular_total")
+def calcular_total(carrito):
+    return round(sum(p["precio"] * p["cantidad"] for p in carrito.values()), 2)
 
 
-def contar_articulos(carrito: dict) -> int:
-    """Total de UNIDADES en el carrito (suma de cantidades). Vacío -> 0."""
-    raise NotImplementedError("Equipo 1: implementen contar_articulos")
+def contar_articulos(carrito):
+    return sum(p["cantidad"] for p in carrito.values())
