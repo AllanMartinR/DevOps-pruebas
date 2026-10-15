@@ -1,0 +1,69 @@
+name: CI Equipo
+
+# Se ejecuta en cada push a una rama "equipo-N-modulo" (ej. equipo-1-carrito)
+on:
+  push:
+    branches: ["equipo-**"]
+  workflow_dispatch:
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    env:
+      RONDA: ${{ vars.RONDA }}   # el instructor pone 2 para activar el incidente
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Detectar módulo por nombre de rama
+        id: mod
+        shell: bash
+        run: |
+          MODULO="${GITHUB_REF_NAME##*-}"
+          if [ ! -f "tests/test_${MODULO}.py" ]; then MODULO="todos"; fi
+          echo "modulo=${MODULO}" >> "$GITHUB_OUTPUT"
+          echo "Módulo detectado: ${MODULO}"
+
+      - name: Traer pruebas de la Ronda 2 (solo si RONDA=2)
+        if: ${{ vars.RONDA == '2' }}
+        shell: bash
+        run: |
+          git fetch origin main --depth=1 || true
+          git checkout FETCH_HEAD -- tests/ronda2 || echo "No hay pruebas de Ronda 2 en main"
+
+      - name: Correr pruebas
+        shell: bash
+        run: |
+          MODULO="${{ steps.mod.outputs.modulo }}"
+          if [ "$MODULO" = "todos" ]; then
+            TARGET="tests --ignore=tests/ronda2"; COV="--cov=tienda"
+            if [ "$RONDA" = "2" ]; then TARGET="tests"; fi
+          else
+            TARGET="tests/test_${MODULO}.py"; COV="--cov=tienda.${MODULO}"
+            if [ "$RONDA" = "2" ] && [ -f "tests/ronda2/test_${MODULO}_ronda2.py" ]; then
+              TARGET="$TARGET tests/ronda2/test_${MODULO}_ronda2.py"
+            fi
+          fi
+          pytest $TARGET $COV --cov-report=json:coverage.json --junitxml=resultados.xml -q
+
+      - name: Resumen de resultados
+        if: always()
+        shell: bash
+        run: python .github/resumen.py "${{ steps.mod.outputs.modulo }}"
+
+      - name: Guardar resultados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-${{ github.ref_name }}-${{ github.run_number }}
+          path: |
+            resultados.xml
+            coverage.json
+          if-no-files-found: ignore
