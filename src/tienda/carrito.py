@@ -17,12 +17,6 @@ def agregar_producto(carrito, nombre, precio, cantidad=1):
 def quitar_producto(carrito, nombre, cantidad=None):
     if nombre not in carrito:
         raise KeyError(nombre)
-    if cantidad is not None and cantidad <= 0:
-        raise ValueError("cantidad inválida")
-    if cantidad is None or cantidad >= carrito[nombre]["cantidad"]:
-        del carrito[nombre]
-    else:
-        carrito[nombre]["cantidad"] -= cantidad
     return carrito
 
 
